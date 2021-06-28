@@ -1,0 +1,16 @@
+database: #mongodb连接信息
+  uri: mongodb://localhost:27017
+  username: username
+  password: password
+  dbname: mihirugo
+server:
+  addr: # 监听地址与端口
+    - :8080
+  allow-origins: # 允许跨域请求的origin列表
+    - http://localhost:8081
+security:
+  password-key: yourpasswordkey # 加密存储密码使用的密钥
+  init-login-name: yourloginname # 初始化用户的用户名
+  init-password: yourpassword # 初始化用户的密码
+gin:
+  mode: debug # gin运行模式, 生产环境请换成release
