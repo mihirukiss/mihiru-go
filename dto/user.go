@@ -11,3 +11,8 @@ type LoginDto struct {
 	LoginName string `json:"loginName"`
 	Password  string `json:"password"`
 }
+
+type ChangePasswordDto struct {
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+}

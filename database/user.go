@@ -14,6 +14,7 @@ type UserDatabase interface {
 	InsertUser(user *models.UserWithObjectId) error
 	UpdateUser(user *models.UserWithObjectId) error
 	GetUserByLoginName(loginName string) (*models.UserWithObjectId, error)
+	GetUserById(id primitive.ObjectID) (*models.UserWithObjectId, error)
 }
 
 func (d *MongoDatabase) InsertUser(user *models.UserWithObjectId) error {
@@ -36,6 +37,16 @@ func (d *MongoDatabase) GetUserByLoginName(loginName string) (*models.UserWithOb
 	var user *models.UserWithObjectId
 	collection := d.DB.Collection(collectionNameUser)
 	err := collection.FindOne(context.Background(), bson.D{{Key: "loginName", Value: loginName}}).Decode(&user)
+	if err != nil && err != mongo.ErrNoDocuments {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (d *MongoDatabase) GetUserById(id primitive.ObjectID) (*models.UserWithObjectId, error) {
+	var user *models.UserWithObjectId
+	collection := d.DB.Collection(collectionNameUser)
+	err := collection.FindOne(context.Background(), bson.D{{Key: "_id", Value: id}}).Decode(&user)
 	if err != nil && err != mongo.ErrNoDocuments {
 		return nil, err
 	}

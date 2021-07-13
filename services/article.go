@@ -22,9 +22,10 @@ type ArticleService interface {
 }
 
 type articleService struct {
-	db        database.ArticleDatabase
-	tagsCache []string
+	db database.ArticleDatabase
 }
+
+var tagsCache []string
 
 func NewArticleService(db database.ArticleDatabase) ArticleService {
 	return articleService{db: db}
@@ -66,7 +67,7 @@ func (a articleService) Add(articleDto *dto.ArticleDto) (*vo.ArticleVo, error) {
 		return nil, vo.NewErrorWithHttpStatus("添加文章失败, 请稍后重试", http.StatusInternalServerError)
 	}
 	if tagsLen > 0 {
-		a.tagsCache = a.tagsCache[:0]
+		tagsCache = tagsCache[:0]
 	}
 	return convertToArticleVo(article), nil
 }
@@ -122,7 +123,7 @@ func (a articleService) Update(id int64, articleDto *dto.ArticleDto) (*vo.Articl
 		return nil, vo.NewErrorWithHttpStatus("更新数据失败, 请稍后重试", http.StatusInternalServerError)
 	}
 	if tagsLen > 0 {
-		a.tagsCache = a.tagsCache[:0]
+		tagsCache = tagsCache[:0]
 	}
 	return convertToArticleVo(&article.Article), nil
 }
@@ -156,15 +157,15 @@ func (a articleService) Search(articleSearchParams *models.ArticleSearchParams) 
 }
 
 func (a articleService) Tags() ([]string, error) {
-	if len(a.tagsCache) == 0 {
+	if len(tagsCache) == 0 {
 		allTag, err := a.db.ListAllTag()
 		if err != nil {
 			util.LogError(err)
 			return nil, vo.NewErrorWithHttpStatus("查询数据失败, 请稍后重试", http.StatusInternalServerError)
 		}
-		a.tagsCache = allTag
+		tagsCache = allTag
 	}
-	return a.tagsCache, nil
+	return tagsCache, nil
 }
 
 func handleArticleContent(articleDto *dto.ArticleDto, article *models.Article) {

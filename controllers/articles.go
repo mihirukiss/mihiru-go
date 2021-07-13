@@ -91,7 +91,7 @@ func (m articlesController) Get(c *gin.Context) {
 		}
 	}
 	etag := strconv.FormatInt(int64(articleVo.Version), 10)
-	if c.Param("v") != "" {
+	if c.Query("v") != "" {
 		c.Header("Cache-Control", "public, max-age=31536000, must-revalidate")
 	} else {
 		c.Header("Cache-Control", "public, max-age=300, must-revalidate")

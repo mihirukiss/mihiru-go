@@ -27,12 +27,12 @@ type UserService interface {
 
 type userService struct {
 	passwordEncoderKey []byte
-	tokenMap           map[primitive.ObjectID]string
-	loginInfoMap       map[string]*vo.UserVo
-
-	src rand.Source
-	db  database.UserDatabase
+	db                 database.UserDatabase
 }
+
+var tokenMap = make(map[primitive.ObjectID]string)
+var loginInfoMap = make(map[string]*vo.UserVo)
+var randSource = rand.NewSource(time.Now().UnixNano())
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 const (
@@ -44,9 +44,6 @@ const (
 func NewUserService(db database.UserDatabase) UserService {
 	return userService{
 		passwordEncoderKey: []byte(config.GetConfigs().GetString("security.password-key")),
-		tokenMap:           make(map[primitive.ObjectID]string),
-		loginInfoMap:       make(map[string]*vo.UserVo),
-		src:                rand.NewSource(time.Now().UnixNano()),
 		db:                 db,
 	}
 }
@@ -65,6 +62,30 @@ func (u userService) Add(userDto *dto.UserDto) (*vo.UserVo, error) {
 	return convertToUserVo(user), nil
 }
 
+func (u userService) ChangePassword(token string, changePasswordDto dto.ChangePasswordDto) error {
+	userVo := loginInfoMap[token]
+	if userVo == nil {
+		return vo.NewErrorWithHttpStatus("用户未登录或登录已失效", http.StatusForbidden)
+	}
+	userWithObjectId, err := u.db.GetUserById(userVo.ID)
+	if err != nil {
+		util.LogError(err)
+		return vo.NewErrorWithHttpStatus("获取登录用户信息失败, 请稍后重试", http.StatusInternalServerError)
+	}
+	if userWithObjectId == nil {
+		return vo.NewErrorWithHttpStatus("无法获取当前用户信息, 请稍后重试", http.StatusInternalServerError)
+	}
+	if encodePassword(changePasswordDto.OldPassword, u.passwordEncoderKey) != userWithObjectId.Password {
+		return vo.NewErrorWithHttpStatus("原密码校验失败", http.StatusBadRequest)
+	}
+	userWithObjectId.Password = encodePassword(changePasswordDto.NewPassword, u.passwordEncoderKey)
+	err = u.db.UpdateUser(userWithObjectId)
+	if err != nil {
+		return vo.NewErrorWithHttpStatus("更新用户信息失败, 请稍后重试", http.StatusInternalServerError)
+	}
+	return nil
+}
+
 func (u userService) Login(loginDto *dto.LoginDto) (string, error) {
 	user, err := u.db.GetUserByLoginName(loginDto.LoginName)
 	if err != nil {
@@ -74,15 +95,15 @@ func (u userService) Login(loginDto *dto.LoginDto) (string, error) {
 	if user == nil || encodePassword(loginDto.Password, u.passwordEncoderKey) != user.Password {
 		return "", vo.NewErrorWithHttpStatus("账号或密码错误", http.StatusBadRequest)
 	}
-	token := randString(64, u.src)
-	u.loginInfoMap[token] = convertToUserVo(user)
-	delete(u.loginInfoMap, u.tokenMap[user.ID])
-	u.tokenMap[user.ID] = token
+	token := randString(64, randSource)
+	loginInfoMap[token] = convertToUserVo(user)
+	delete(loginInfoMap, tokenMap[user.ID])
+	tokenMap[user.ID] = token
 	return token, nil
 }
 
 func (u userService) CheckToken(token string) *vo.UserVo {
-	return u.loginInfoMap[token]
+	return loginInfoMap[token]
 }
 
 func (u userService) InitUser() {
@@ -111,7 +132,7 @@ func encodePassword(password string, passwordEncoderKey []byte) string {
 
 func convertToUserVo(user *models.UserWithObjectId) *vo.UserVo {
 	userVo := new(vo.UserVo)
-	userVo.UserObjectIdFields = user.UserObjectIdFields
+	userVo.ID = user.ID
 	userVo.UserBaseFields = user.UserBaseFields
 	return userVo
 }
