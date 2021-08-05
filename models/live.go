@@ -15,6 +15,7 @@ type LiveCutDialogue struct {
 type Live struct {
 	Timestamp        int64                 `bson:"timestamp" json:"timestamp"`
 	Title            string                `bson:"title" json:"title"`
+	Content          string                `bson:"content" json:"content"`
 	UserProfile      *DynamicUserProfile   `bson:"user_profile" json:"user_profile"`
 	JoinUserProfiles *[]DynamicUserProfile `bson:"join_user_profiles" json:"join_user_profiles"`
 	FullRecord       string                `bson:"full_record" json:"full_record"`
