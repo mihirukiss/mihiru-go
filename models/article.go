@@ -30,10 +30,10 @@ type ArticleAutoGenFields struct {
 type ArticleSearchParams struct {
 	PageParams
 	Keyword    string   `json:"keyword"`
-	AllowTags  []string `json:"allow_tags"`
-	DenyTags   []string `json:"deny_tags"`
-	MaxRatting *int8    `json:"max_ratting"`
-	ShowHide   *bool    `json:"show_hide"`
+	AllowTags  []string `json:"allowTags"`
+	DenyTags   []string `json:"denyTags"`
+	MaxRatting *int8    `json:"maxRatting"`
+	ShowHide   *bool    `json:"showHide"`
 }
 
 type Article struct {
