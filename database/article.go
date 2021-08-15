@@ -127,7 +127,7 @@ func (d *MongoDatabase) InsertArticle(article *models.Article) error {
 
 func (d *MongoDatabase) UpdateArticle(article *models.ArticleWithObjectId) error {
 	collection := d.DB.Collection(collectionNameArticle)
-	_, err := collection.UpdateByID(context.Background(), article.ObjectId, article)
+	_, err := collection.UpdateByID(context.Background(), article.ObjectId, bson.M{"$set": article.Article})
 	if err != nil {
 		return err
 	}

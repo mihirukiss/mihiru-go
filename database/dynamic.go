@@ -30,7 +30,7 @@ func (d *MongoDatabase) InsertDynamic(dynamic *models.DynamicWithObjectId) error
 
 func (d *MongoDatabase) UpdateDynamic(dynamic *models.DynamicWithObjectId) error {
 	collection := d.DB.Collection(collectionNameDynamic)
-	_, err := collection.UpdateByID(context.Background(), dynamic.ID, dynamic)
+	_, err := collection.UpdateByID(context.Background(), dynamic.ID, bson.M{"$set": dynamic.DynamicWithLastModified})
 	return err
 }
 

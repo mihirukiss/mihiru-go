@@ -29,7 +29,7 @@ func (d *MongoDatabase) InsertUser(user *models.UserWithObjectId) error {
 
 func (d *MongoDatabase) UpdateUser(user *models.UserWithObjectId) error {
 	collection := d.DB.Collection(collectionNameUser)
-	_, err := collection.UpdateByID(context.Background(), user.ID, user)
+	_, err := collection.UpdateByID(context.Background(), user.ID, bson.M{"$set": user.User})
 	return err
 }
 

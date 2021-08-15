@@ -30,7 +30,7 @@ func (d *MongoDatabase) InsertLive(live *models.LiveWithObjectId) error {
 
 func (d *MongoDatabase) UpdateLive(live *models.LiveWithObjectId) error {
 	collection := d.DB.Collection(collectionNameLive)
-	_, err := collection.UpdateByID(context.Background(), live.ID, live)
+	_, err := collection.UpdateByID(context.Background(), live.ID, bson.M{"$set": live.LiveWithLastModified})
 	return err
 }
 
