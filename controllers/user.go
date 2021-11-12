@@ -12,6 +12,7 @@ import (
 type UserController interface {
 	Add(c *gin.Context)
 	Login(c *gin.Context)
+	ChangePassword(c *gin.Context)
 }
 
 type userController struct {
@@ -37,6 +38,21 @@ func (u userController) Add(c *gin.Context) {
 	c.JSON(http.StatusOK, userVo)
 }
 
+func (u userController) ChangePassword(c *gin.Context) {
+	var changePasswordDto dto.ChangePasswordDto
+	if err := c.BindJSON(&changePasswordDto); err != nil {
+		log.Println(err.Error())
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "错误的参数格式"})
+		return
+	}
+	err := u.service.ChangePassword(c.GetHeader("authorization"), changePasswordDto)
+	if err != nil {
+		util.ErrorResponse(c, err)
+		return
+	}
+	c.Status(http.StatusOK)
+}
+
 func (u userController) Login(c *gin.Context) {
 	var loginDto dto.LoginDto
 	if err := c.BindJSON(&loginDto); err != nil {
@@ -44,10 +60,10 @@ func (u userController) Login(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "错误的参数格式"})
 		return
 	}
-	token, err := u.service.Login(&loginDto)
+	token, name, err := u.service.Login(&loginDto)
 	if err != nil {
 		util.ErrorResponse(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"token": token, "name": name})
 }

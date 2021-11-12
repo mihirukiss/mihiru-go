@@ -20,7 +20,8 @@ import (
 
 type UserService interface {
 	Add(userDto *dto.UserDto) (*vo.UserVo, error)
-	Login(loginDto *dto.LoginDto) (string, error)
+	Login(loginDto *dto.LoginDto) (string, string, error)
+	ChangePassword(token string, changePasswordDto dto.ChangePasswordDto) error
 	CheckToken(token string) *vo.UserVo
 	InitUser()
 }
@@ -83,23 +84,24 @@ func (u userService) ChangePassword(token string, changePasswordDto dto.ChangePa
 	if err != nil {
 		return vo.NewErrorWithHttpStatus("更新用户信息失败, 请稍后重试", http.StatusInternalServerError)
 	}
+	delete(loginInfoMap, token)
 	return nil
 }
 
-func (u userService) Login(loginDto *dto.LoginDto) (string, error) {
+func (u userService) Login(loginDto *dto.LoginDto) (string, string, error) {
 	user, err := u.db.GetUserByLoginName(loginDto.LoginName)
 	if err != nil {
 		util.LogError(err)
-		return "", vo.NewErrorWithHttpStatus("查询用户信息失败, 请稍后重试", http.StatusInternalServerError)
+		return "", "", vo.NewErrorWithHttpStatus("查询用户信息失败, 请稍后重试", http.StatusInternalServerError)
 	}
 	if user == nil || encodePassword(loginDto.Password, u.passwordEncoderKey) != user.Password {
-		return "", vo.NewErrorWithHttpStatus("账号或密码错误", http.StatusBadRequest)
+		return "", "", vo.NewErrorWithHttpStatus("账号或密码错误", http.StatusBadRequest)
 	}
 	token := randString(64, randSource)
 	loginInfoMap[token] = convertToUserVo(user)
 	delete(loginInfoMap, tokenMap[user.ID])
 	tokenMap[user.ID] = token
-	return token, nil
+	return token, user.Name, nil
 }
 
 func (u userService) CheckToken(token string) *vo.UserVo {

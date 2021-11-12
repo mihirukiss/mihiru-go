@@ -11,6 +11,7 @@ import (
 )
 
 var adminRole = []string{"admin"}
+var voiceManagerRole = []string{"admin", "voice-manager"}
 
 func NewRouter(db *database.MongoDatabase) *gin.Engine {
 	router := gin.New()
@@ -18,6 +19,7 @@ func NewRouter(db *database.MongoDatabase) *gin.Engine {
 	router.Use(gin.Recovery())
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = config.GetConfigs().GetStringSlice("server.allow-origins")
+	corsConfig.AddAllowHeaders("Authorization")
 	router.Use(cors.New(corsConfig))
 
 	userService := services.NewUserService(db)
@@ -29,6 +31,9 @@ func NewRouter(db *database.MongoDatabase) *gin.Engine {
 
 	memoryService := services.NewMemoryService(db, db)
 	memoryController := controllers.NewMemoryController(memoryService)
+
+	voiceService := services.NewVoiceService(db)
+	voiceController := controllers.NewVoiceController(voiceService)
 
 	permissions := middleware.NewPermissions(userService)
 
@@ -45,6 +50,7 @@ func NewRouter(db *database.MongoDatabase) *gin.Engine {
 	{
 		userGroup.POST("", permissions.Roles(adminRole), userController.Add)
 		userGroup.POST("/login", userController.Login)
+		userGroup.POST("/changePassword", permissions.Login(), userController.ChangePassword)
 	}
 
 	memoryGroup := router.Group("memory")
@@ -55,6 +61,14 @@ func NewRouter(db *database.MongoDatabase) *gin.Engine {
 		memoryGroup.PUT("/live/:id", permissions.Roles(adminRole), memoryController.UpdateLive)
 		memoryGroup.GET("/days", memoryController.Days)
 		memoryGroup.GET("/day/:day", memoryController.Day)
+	}
+
+	voiceGroup := router.Group("voice")
+	{
+		voiceGroup.POST("", permissions.Roles(voiceManagerRole), voiceController.AddVoice)
+		voiceGroup.PUT("/:id", permissions.Roles(voiceManagerRole), voiceController.UpdateVoice)
+		voiceGroup.DELETE("/:id", permissions.Roles(voiceManagerRole), voiceController.DeleteVoice)
+		voiceGroup.GET("/:liver", voiceController.LiverVoices)
 	}
 
 	return router

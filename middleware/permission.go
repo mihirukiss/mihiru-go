@@ -9,6 +9,7 @@ import (
 
 type Permissions interface {
 	Roles(roles []string) gin.HandlerFunc
+	Login() gin.HandlerFunc
 }
 
 type permissions struct {
@@ -51,7 +52,7 @@ func (p permissions) getLoginUser(c *gin.Context) *vo.UserVo {
 	}
 	user := p.userService.CheckToken(token)
 	if user == nil {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"message": "无效验证信息"})
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"message": "验证信息失效, 请退出登录后重新登录"})
 		return nil
 	}
 	return user
